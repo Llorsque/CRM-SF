@@ -203,7 +203,7 @@ function render(){
   elTotals.textContent = totalText;
 
   elCards.innerHTML = '';
-  const tpl = q('#cardTpl') || document.getElementById('cardTpl');
+  const tpl = q('#cardTpl');
   pageRows.forEach(r=>{
     const node = tpl.content.cloneNode(true);
     node.querySelector('.club-title').textContent = r.name || '(naam onbekend)';
@@ -255,6 +255,55 @@ function exportCSV(rows){
   URL.revokeObjectURL(url);
 }
 
+let map, marker;
+function ensureMap(lat, lng){
+  const el = document.getElementById('miniMap');
+  if(!map){
+    map = L.map(el).setView([lat, lng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    marker = L.marker([lat, lng]).addTo(map);
+  } else {
+    map.setView([lat, lng], 13);
+    marker.setLatLng([lat, lng]);
+  }
+  setTimeout(()=>{ map.invalidateSize(); }, 50);
+}
+
+function humanizeKey(k){
+  // Maak nettere labels van keys
+  return k.replace(/_/g,' ').replace(/\s+/g,' ')
+          .replace(/(^|\s)\w/g, m => m.toUpperCase())
+          .replace(/'/g, '’');
+}
+function prettifyValue(v){
+  if(v === null || v === undefined || v === '') return '—';
+  if(v === '0') return 'Nee';
+  if(v === '1') return 'Ja';
+  return String(v);
+}
+
+function renderAttrList(obj){
+  const el = q('#attrList');
+  el.innerHTML = '';
+  if(!obj || typeof obj !== 'object'){ el.textContent = '(geen overige attributen)'; return; }
+  const entries = Object.entries(obj)
+    .filter(([k,v])=> v !== null && v !== '' && v !== undefined)
+    .sort(([a],[b])=> a.localeCompare(b));
+  if(entries.length === 0){ el.textContent = '(geen overige attributen)'; return; }
+
+  entries.forEach(([k,v])=>{
+    const row = document.createElement('div');
+    row.className = 'attr-item';
+    const kk = document.createElement('div'); kk.className='k'; kk.textContent = humanizeKey(k);
+    const vv = document.createElement('div'); vv.className='v'; vv.textContent = prettifyValue(v);
+    row.appendChild(kk); row.appendChild(vv);
+    el.appendChild(row);
+  });
+}
+
 function openDetails(r){
   const dlg = q('#detailsDialog');
   q('#dlgTitle').textContent = r.name || 'Details';
@@ -264,13 +313,18 @@ function openDetails(r){
   q('#dlgType').textContent = r.type || '—';
   q('#dlgCanteen').textContent = r.has_canteen === true ? 'Ja' : r.has_canteen === false ? 'Nee' : 'Onbekend';
   q('#dlgPostcode').textContent = r.postal_code || '—';
-  q('#dlgGeo').textContent = (r.latitude && r.longitude) ? `${r.latitude}, ${r.longitude}` : '—';
+  q('#dlgGeo').textContent = (r.latitude != null && r.longitude != null) ? `${r.latitude}, ${r.longitude}` : '—';
   q('#dlgId').textContent = r.id_code || '—';
-  try{
-    q('#dlgAttributes').textContent = r.attributes ? JSON.stringify(r.attributes, null, 2) : '(geen overige attributen)';
-  }catch(e){
-    q('#dlgAttributes').textContent = '(geen overige attributen)';
+  renderAttrList(r.attributes);
+
+  // Kaart
+  if(r.latitude != null && r.longitude != null){
+    ensureMap(r.latitude, r.longitude);
+  } else {
+    const el = document.getElementById('miniMap');
+    el.innerHTML = '<div style="padding:12px;color:#6b7280">Geen coördinaten beschikbaar</div>';
   }
+
   q('#dlgClose').onclick = ()=>dlg.close();
   dlg.showModal();
 }

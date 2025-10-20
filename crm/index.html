@@ -8,6 +8,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css" />
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
 <body>
   <header class="app-header">
@@ -85,8 +88,9 @@
         <button id="dlgClose" class="btn ghost">✖</button>
       </header>
       <div class="dlg-body">
-        <div class="cols">
-          <div>
+        <div class="grid-detail">
+          <!-- linksboven: key info -->
+          <div class="info">
             <div class="kv"><strong>Sport:</strong> <span id="dlgSport"></span></div>
             <div class="kv"><strong>Gemeente:</strong> <span id="dlgMunicipality"></span></div>
             <div class="kv"><strong>Plaats:</strong> <span id="dlgCity"></span></div>
@@ -96,15 +100,24 @@
             <div class="kv"><strong>Locatie:</strong> <span id="dlgGeo"></span></div>
             <div class="kv"><strong>ID:</strong> <span id="dlgId"></span></div>
           </div>
-          <div>
-            <pre id="dlgAttributes" class="attrs"></pre>
+          <!-- linksonder: kaart (1/4) -->
+          <div class="map-wrap">
+            <div id="miniMap"></div>
+          </div>
+          <!-- rechts: nette lijst van attributen -->
+          <div class="attr-panel">
+            <h4>Attributen</h4>
+            <div id="attrList" class="attr-list"></div>
           </div>
         </div>
       </div>
     </div>
   </dialog>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
   <script type="module" src="./app.js"></script>
 </body>
 </html>

@@ -50,13 +50,28 @@ a{color:inherit}
 .meta .icon{opacity:.8;margin-right:6px}
 .club-actions{margin-top:10px;display:flex;justify-content:flex-start}
 /* dialog */
-dialog{border:none;border-radius:16px;max-width:980px;width:95%;}
+dialog{border:none;border-radius:16px;max-width:1200px;width:95%;}
 .dlg{padding:0}
 .dlg-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
 .dlg-body{padding:16px}
-.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+/* details layout: 2 kolommen, linkerkolom opgesplitst in 2 rijen (info + map) = samen ~25% */
+.grid-detail{
+  display:grid;
+  grid-template-columns: 1fr 3fr; /* links 25%, rechts 75% */
+  grid-template-rows: auto 260px; /* info boven, kaart onder */
+  gap:16px;
+}
+.info{grid-column:1;grid-row:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
+.map-wrap{grid-column:1;grid-row:2;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+#miniMap{height:100%;min-height:240px;width:100%}
+.attr-panel{grid-column:2 / span 1; grid-row: 1 / span 2; background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;overflow:auto;max-height:540px}
+.attr-panel h4{margin:0 0 8px}
+.attr-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.attr-item{display:flex;gap:8px}
+.attr-item .k{color:#6b7280;min-width:140px}
 .kv{margin-bottom:6px}
-.attrs{background:#0d1117;color:#c9d1d9;padding:12px;border-radius:12px;max-height:360px;overflow:auto;font-size:12px}
+.muted{color:#6c7a90}
 
 /* multi-select dropdowns */
 .msel{position:relative}
@@ -71,7 +86,6 @@ dialog{border:none;border-radius:16px;max-width:980px;width:95%;}
 .msel .opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer}
 .msel .opt:hover{background:#f3f7fb}
 .msel .header{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;color:#4b5563}
-.muted{color:#6c7a90}
 
 /* pagination */
 .pager{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0}
