@@ -26,21 +26,36 @@
     <section class="filters card">
       <div class="row">
         <input id="q" class="inp" type="search" placeholder="🔎 Zoek op naam..." />
-        
+
         <div class="msel" data-key="municipality">
           <button class="btn ghost msel-btn" type="button">Gemeente ▾</button>
           <div class="msel-menu"></div>
         </div>
+
         <div class="msel" data-key="city">
           <button class="btn ghost msel-btn" type="button">Plaats ▾</button>
           <div class="msel-menu"></div>
         </div>
+
         <div class="msel" data-key="sport">
           <button class="btn ghost msel-btn" type="button">Sport ▾</button>
           <div class="msel-menu"></div>
         </div>
+
         <div class="msel" data-key="profit">
           <button class="btn ghost msel-btn" type="button">Profit/Non-profit ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+
+        <!-- NEW: Eigen Kantine -->
+        <div class="msel" data-key="canteen">
+          <button class="btn ghost msel-btn" type="button">Eigen Kantine ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+
+        <!-- NEW: Attributen -->
+        <div class="msel" data-key="attrs">
+          <button class="btn ghost msel-btn" type="button">Attributen ▾</button>
           <div class="msel-menu"></div>
         </div>
 
@@ -61,6 +76,7 @@
       <button id="nextPage" class="btn ghost">Volgende ▶</button>
     </div>
 
+    <!-- Card template (ongewijzigd) -->
     <template id="cardTpl">
       <article class="card club-card">
         <header class="club-head">
@@ -124,6 +140,7 @@
     </div>
   </dialog>
 
+  <!-- Supabase + Leaflet + App -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
