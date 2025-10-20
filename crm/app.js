@@ -28,6 +28,7 @@ const mselState = {
 // Pagination
 const PAGE_SIZE = 16;
 let currentPage = 1;
+let totalCount = 0;
 
 q('#btnClear').addEventListener('click', ()=>{
   elQ.value = '';
@@ -71,12 +72,29 @@ function profitLabel(type){
 
 async function loadData(force=false){
   if(allRows.length && !force) return;
-  const { data, error } = await supabase
-    .from('organizations')
-    .select('id_code,name,type,sport,municipality,city,postal_code,has_canteen,latitude,longitude,attributes')
-    .limit(10000);
-  if(error){ console.error(error); alert('Fout bij laden data'); return; }
-  allRows = data || [];
+  allRows = [];
+  totalCount = 0;
+
+  const CHUNK = 1000;
+  let from = 0;
+  let firstCountSet = false;
+
+  while(true){
+    const { data, error, count } = await supabase
+      .from('organizations')
+      .select('id_code,name,type,sport,municipality,city,postal_code,has_canteen,latitude,longitude,attributes', { count: 'exact' })
+      .range(from, from + CHUNK - 1);
+
+    if(error){ console.error(error); alert('Fout bij laden data'); break; }
+    if(!firstCountSet){ totalCount = count || 0; firstCountSet = true; }
+    if(!data || data.length === 0) break;
+
+    allRows.push(...data);
+
+    if(data.length < CHUNK) break;
+    from += CHUNK;
+  }
+
   buildFilterOptions();
 }
 
@@ -162,23 +180,10 @@ function applyFilters(){
       const hay = [r.name, r.sport, r.municipality, r.city, r.type].join(' ').toLowerCase();
       if(!hay.includes(qv)) return false;
     }
-    // municipality
-    if(mselState.municipality.size){
-      if(!mselState.municipality.has(r.municipality)) return false;
-    }
-    // city
-    if(mselState.city.size){
-      if(!mselState.city.has(r.city)) return false;
-    }
-    // sport
-    if(mselState.sport.size){
-      if(!mselState.sport.has(r.sport)) return false;
-    }
-    // profit
-    if(mselState.profit.size){
-      const pl = profitLabel(r.type);
-      if(!mselState.profit.has(pl)) return false;
-    }
+    if(mselState.municipality.size && !mselState.municipality.has(r.municipality)) return false;
+    if(mselState.city.size && !mselState.city.has(r.city)) return false;
+    if(mselState.sport.size && !mselState.sport.has(r.sport)) return false;
+    if(mselState.profit.size && !mselState.profit.has(profitLabel(r.type))) return false;
     return true;
   });
 }
@@ -192,10 +197,13 @@ function render(){
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageRows = filteredRows.slice(start, start + PAGE_SIZE);
 
-  elTotals.textContent = `Totaal ${allRows.length} • Gefilterd ${filteredRows.length}`;
+  const totalText = (totalCount && totalCount > allRows.length)
+    ? `Totaal (DB) ~${totalCount} • In geheugen ${allRows.length} • Gefilterd ${filteredRows.length}`
+    : `Totaal ${allRows.length} • Gefilterd ${filteredRows.length}`;
+  elTotals.textContent = totalText;
 
   elCards.innerHTML = '';
-  const tpl = q('#cardTpl');
+  const tpl = q('#cardTpl') || document.getElementById('cardTpl');
   pageRows.forEach(r=>{
     const node = tpl.content.cloneNode(true);
     node.querySelector('.club-title').textContent = r.name || '(naam onbekend)';
@@ -213,8 +221,7 @@ function render(){
     elCards.appendChild(node);
   });
 
-  // pagination controls
-  q('#pageInfo').textContent = `Pagina ${currentPage} / ${totalPages}`;
+  q('#pageInfo').textContent = `Pagina ${currentPage} / ${Math.max(1, totalPages)}`;
   q('#prevPage').disabled = currentPage <= 1;
   q('#nextPage').disabled = currentPage >= totalPages;
 }
