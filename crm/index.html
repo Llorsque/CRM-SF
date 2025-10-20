@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CRM – Clubs & Klanten</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="left">
+      <a class="home-link" href="../">← Terug</a>
+      <h1>CRM</h1>
+    </div>
+    <div class="right">
+      <span id="envWarning" class="env-warning">Configureer eerst je Supabase in <code>config.js</code>.</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="filters card">
+      <div class="row">
+        <input id="q" class="inp" type="search" placeholder="🔎 Zoek op naam..." />
+        <select id="fMunicipality" class="inp" aria-label="Gemeente">
+          <option value="">Gemeente</option>
+        </select>
+        <select id="fCity" class="inp" aria-label="Plaats">
+          <option value="">Plaats</option>
+        </select>
+        <select id="fSport" class="inp" aria-label="Sport">
+          <option value="">Sport</option>
+        </select>
+        <select id="fProfit" class="inp" aria-label="Profit/Non-profit">
+          <option value="">Profit/Non-profit</option>
+          <option value="Non-profit">Non-profit</option>
+          <option value="Profit">Profit</option>
+          <option value="Onbekend">Onbekend</option>
+        </select>
+        <button id="btnClear" class="btn ghost">🧹 Wis</button>
+        <button id="btnExport" class="btn soft">⬇️ Export</button>
+        <button id="btnRefresh" class="btn">🔄 Vernieuw</button>
+      </div>
+      <p class="hint">
+        Klik op een filter om opties te kiezen. Gebruik het zoekveld om snel te filteren.
+        <span id="totals"></span>
+      </p>
+    </section>
+
+    <section id="cards" class="grid"></section>
+
+    <template id="cardTpl">
+      <article class="card club-card">
+        <header class="club-head">
+          <h3 class="club-title"></h3>
+          <span class="badge type"></span>
+        </header>
+        <ul class="meta">
+          <li><span class="icon">🏅</span> <span class="sport"></span></li>
+          <li><span class="icon">🏙️</span> <span class="municipality"></span></li>
+          <li><span class="icon">📍</span> <span class="city"></span></li>
+          <li><span class="icon">🏪</span> <span class="canteen"></span></li>
+        </ul>
+        <footer class="club-actions">
+          <button class="btn soft details">Details</button>
+        </footer>
+      </article>
+    </template>
+  </main>
+
+  <dialog id="detailsDialog">
+    <div class="dlg">
+      <header class="dlg-head">
+        <h3 id="dlgTitle">Details</h3>
+        <button id="dlgClose" class="btn ghost">✖</button>
+      </header>
+      <div class="dlg-body">
+        <div class="cols">
+          <div>
+            <div class="kv"><strong>Sport:</strong> <span id="dlgSport"></span></div>
+            <div class="kv"><strong>Gemeente:</strong> <span id="dlgMunicipality"></span></div>
+            <div class="kv"><strong>Plaats:</strong> <span id="dlgCity"></span></div>
+            <div class="kv"><strong>Soort:</strong> <span id="dlgType"></span></div>
+            <div class="kv"><strong>Kantine:</strong> <span id="dlgCanteen"></span></div>
+            <div class="kv"><strong>Postcode:</strong> <span id="dlgPostcode"></span></div>
+            <div class="kv"><strong>Locatie:</strong> <span id="dlgGeo"></span></div>
+            <div class="kv"><strong>ID:</strong> <span id="dlgId"></span></div>
+          </div>
+          <div>
+            <pre id="dlgAttributes" class="attrs"></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
