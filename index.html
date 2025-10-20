@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Github CRM/ERP – Main</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="nav-left">
+      <div class="dropdown">
+        <button id="menuBtn" class="menu-btn" aria-haspopup="true" aria-expanded="false">Modules ▾</button>
+        <nav id="menuList" class="menu-list" aria-label="Hoofdmenu">
+          <a class="menu-item" href="./crm/">CRM</a>
+          <a class="menu-item" href="./dashboard/">Dashboard</a>
+          <a class="menu-item" href="./kaart/">Kaart</a>
+          <a class="menu-item" href="./trajecten/">Trajecten</a>
+          <a class="menu-item" href="./producten-diensten/">Producten en Diensten</a>
+        </nav>
+      </div>
+    </div>
+    <h1 class="brand">Github CRM/ERP</h1>
+  </header>
+
+  <main class="container">
+    <section class="hero card">
+      <h2>Welkom</h2>
+      <p>Dit is de main/landingspagina van het CRM/ERP prototype. Gebruik het menu linksboven om naar modules te gaan.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>Prototype • Archivo • #212945 / #52E8E8</small>
+  </footer>
+
+  <script src="./app.js" type="module"></script>
+</body>
+</html>
