@@ -28,7 +28,7 @@ a{color:inherit}
   box-shadow:0 8px 20px rgba(17,24,39,0.04);
 }
 .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
-@media (max-width: 1100px){.grid{grid-template-columns:repeat(4,1fr)}} /* force 4 where possible */
+@media (max-width: 1100px){.grid{grid-template-columns:repeat(4,1fr)}}
 @media (max-width: 820px){.grid{grid-template-columns:repeat(2,1fr)}}
 @media (max-width: 560px){.grid{grid-template-columns:1fr}}
 .inp{padding:10px 12px;border:1px solid var(--border);border-radius:10px;background:#fff;min-width:220px}
@@ -55,37 +55,31 @@ dialog{border:none;border-radius:16px;max-width:1200px;width:95%;}
 .dlg-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border)}
 .dlg-body{padding:16px}
 
-/* details layout: 2 kolommen, linkerkolom opgesplitst in 2 rijen (info + map) = samen ~25% */
+/* details layout */
 .grid-detail{
   display:grid;
-  grid-template-columns: 1fr 3fr; /* links 25%, rechts 75% */
-  grid-template-rows: auto 260px; /* info boven, kaart onder */
+  grid-template-columns: 1fr 3fr;
+  grid-template-rows: auto 260px auto auto;
   gap:16px;
 }
-.info{grid-column:1;grid-row:1;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px}
-.map-wrap{grid-column:1;grid-row:2;background:#fff;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.info{grid-column:1;grid-row:1;}
+.map-wrap{grid-column:1;grid-row:2;overflow:hidden}
 #miniMap{height:100%;min-height:240px;width:100%}
-.attr-panel{grid-column:2 / span 1; grid-row: 1 / span 2; background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px;overflow:auto;max-height:540px}
-.attr-panel h4{margin:0 0 8px}
-.attr-list{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.attr-item{display:flex;gap:8px}
-.attr-item .k{color:#6b7280;min-width:140px}
-.kv{margin-bottom:6px}
-.muted{color:#6c7a90}
 
-/* multi-select dropdowns */
-.msel{position:relative}
-.msel-btn{min-width:200px}
-.msel-menu{
-  position:absolute;left:0;top:calc(100% + 6px);z-index:20;
-  display:none;min-width:260px;max-height:260px;overflow:auto;
-  background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.08);
-  padding:8px;
-}
-.msel.open .msel-menu{display:block}
-.msel .opt{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer}
-.msel .opt:hover{background:#f3f7fb}
-.msel .header{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;color:#4b5563}
+/* Attributen: twee kolommen met consistente uitlijning per kolom */
+.attr-panel{grid-column:2;grid-row:1 / span 2;overflow:auto;max-height:540px}
+.attr-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.attr-col{display:grid;grid-auto-rows:minmax(24px,auto);gap:6px}
+.ar{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:12px}
+.ar .k{color:#6b7280;min-width:240px}
+.ar .v{text-align:left;font-weight:600}
 
-/* pagination */
-.pager{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0}
+/* Trajecten + Documenten */
+.tracks-panel{grid-column:1 / span 2;grid-row:3}
+.tracks-list{display:grid;gap:6px}
+.track-pill{display:flex;align-items:center;gap:8px;border:1px solid var(--border);border-radius:12px;padding:8px 10px}
+.track-status{font-size:12px;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:#eef2f7}
+.docs-panel{grid-column:1 / span 2;grid-row:4}
+.docs-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.docs-list{display:grid;gap:6px}
+.small{font-size:12px}

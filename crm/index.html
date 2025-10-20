@@ -23,22 +23,38 @@
   </header>
 
   <main class="container">
-    <!-- ... rest van je huidige markup blijft ongewijzigd ... -->
     <section class="filters card">
       <div class="row">
         <input id="q" class="inp" type="search" placeholder="🔎 Zoek op naam..." />
-        <div class="msel" data-key="municipality"><button class="btn ghost msel-btn" type="button">Gemeente ▾</button><div class="msel-menu"></div></div>
-        <div class="msel" data-key="city"><button class="btn ghost msel-btn" type="button">Plaats ▾</button><div class="msel-menu"></div></div>
-        <div class="msel" data-key="sport"><button class="btn ghost msel-btn" type="button">Sport ▾</button><div class="msel-menu"></div></div>
-        <div class="msel" data-key="profit"><button class="btn ghost msel-btn" type="button">Profit/Non-profit ▾</button><div class="msel-menu"></div></div>
+        
+        <div class="msel" data-key="municipality">
+          <button class="btn ghost msel-btn" type="button">Gemeente ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+        <div class="msel" data-key="city">
+          <button class="btn ghost msel-btn" type="button">Plaats ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+        <div class="msel" data-key="sport">
+          <button class="btn ghost msel-btn" type="button">Sport ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+        <div class="msel" data-key="profit">
+          <button class="btn ghost msel-btn" type="button">Profit/Non-profit ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+
         <button id="btnClear" class="btn ghost">🧹 Wis</button>
         <button id="btnExport" class="btn soft">⬇️ Export</button>
         <button id="btnRefresh" class="btn">🔄 Vernieuw</button>
       </div>
-      <p class="hint">Selecteer meerdere opties per filter via de dropdowns. <span id="totals"></span></p>
+      <p class="hint">
+        Selecteer meerdere opties per filter via de dropdowns. <span id="totals"></span>
+      </p>
     </section>
 
     <section id="cards" class="grid"></section>
+
     <div class="pager">
       <button id="prevPage" class="btn ghost">◀ Vorige</button>
       <span id="pageInfo" class="muted"></span>
@@ -47,14 +63,19 @@
 
     <template id="cardTpl">
       <article class="card club-card">
-        <header class="club-head"><h3 class="club-title"></h3><span class="badge type"></span></header>
+        <header class="club-head">
+          <h3 class="club-title"></h3>
+          <span class="badge type"></span>
+        </header>
         <ul class="meta">
           <li><span class="icon">🏅</span> <span class="sport"></span></li>
           <li><span class="icon">🏙️</span> <span class="municipality"></span></li>
           <li><span class="icon">📍</span> <span class="city"></span></li>
           <li><span class="icon">🏪</span> <span class="canteen"></span></li>
         </ul>
-        <footer class="club-actions"><button class="btn soft details">Details</button></footer>
+        <footer class="club-actions">
+          <button class="btn soft details">Details</button>
+        </footer>
       </article>
     </template>
   </main>
@@ -67,7 +88,7 @@
       </header>
       <div class="dlg-body">
         <div class="grid-detail">
-          <div class="info">
+          <div class="info card">
             <div class="kv"><strong>Sport:</strong> <span id="dlgSport"></span></div>
             <div class="kv"><strong>Gemeente:</strong> <span id="dlgMunicipality"></span></div>
             <div class="kv"><strong>Plaats:</strong> <span id="dlgCity"></span></div>
@@ -77,23 +98,35 @@
             <div class="kv"><strong>Locatie:</strong> <span id="dlgGeo"></span></div>
             <div class="kv"><strong>ID:</strong> <span id="dlgId"></span></div>
           </div>
-          <div class="map-wrap"><div id="miniMap"></div></div>
-          <div class="attr-panel">
+          <div class="map-wrap card"><div id="miniMap"></div></div>
+          <div class="attr-panel card">
             <h4>Attributen</h4>
-            <div id="attrList" class="attr-list"></div>
+            <div id="attrCols" class="attr-cols">
+              <div class="attr-col" id="attrColA"></div>
+              <div class="attr-col" id="attrColB"></div>
+            </div>
+          </div>
+          <div class="tracks-panel card">
+            <h4>Trajecten</h4>
+            <div id="tracksList" class="tracks-list muted">Nog geen trajecten gekoppeld.</div>
+          </div>
+          <div class="docs-panel card">
+            <h4>Documenten</h4>
+            <div class="docs-row">
+              <input id="docFile" type="file" />
+              <button id="btnUpload" class="btn">Upload</button>
+            </div>
+            <div id="docsList" class="docs-list muted">Nog geen documenten.</div>
+            <div id="docsHint" class="muted small"></div>
           </div>
         </div>
       </div>
     </div>
   </dialog>
 
-  <!-- Supabase JS (ONTBRAK) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-
-  <!-- App -->
   <script type="module" src="./app.js"></script>
 </body>
 </html>
