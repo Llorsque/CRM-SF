@@ -24,32 +24,40 @@
     <section class="filters card">
       <div class="row">
         <input id="q" class="inp" type="search" placeholder="🔎 Zoek op naam..." />
-        <select id="fMunicipality" class="inp" aria-label="Gemeente">
-          <option value="">Gemeente</option>
-        </select>
-        <select id="fCity" class="inp" aria-label="Plaats">
-          <option value="">Plaats</option>
-        </select>
-        <select id="fSport" class="inp" aria-label="Sport">
-          <option value="">Sport</option>
-        </select>
-        <select id="fProfit" class="inp" aria-label="Profit/Non-profit">
-          <option value="">Profit/Non-profit</option>
-          <option value="Non-profit">Non-profit</option>
-          <option value="Profit">Profit</option>
-          <option value="Onbekend">Onbekend</option>
-        </select>
+        
+        <div class="msel" data-key="municipality">
+          <button class="btn ghost msel-btn" type="button">Gemeente ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+        <div class="msel" data-key="city">
+          <button class="btn ghost msel-btn" type="button">Plaats ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+        <div class="msel" data-key="sport">
+          <button class="btn ghost msel-btn" type="button">Sport ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+        <div class="msel" data-key="profit">
+          <button class="btn ghost msel-btn" type="button">Profit/Non-profit ▾</button>
+          <div class="msel-menu"></div>
+        </div>
+
         <button id="btnClear" class="btn ghost">🧹 Wis</button>
         <button id="btnExport" class="btn soft">⬇️ Export</button>
         <button id="btnRefresh" class="btn">🔄 Vernieuw</button>
       </div>
       <p class="hint">
-        Klik op een filter om opties te kiezen. Gebruik het zoekveld om snel te filteren.
-        <span id="totals"></span>
+        Selecteer meerdere opties per filter via de dropdowns. <span id="totals"></span>
       </p>
     </section>
 
     <section id="cards" class="grid"></section>
+
+    <div class="pager">
+      <button id="prevPage" class="btn ghost">◀ Vorige</button>
+      <span id="pageInfo" class="muted"></span>
+      <button id="nextPage" class="btn ghost">Volgende ▶</button>
+    </div>
 
     <template id="cardTpl">
       <article class="card club-card">

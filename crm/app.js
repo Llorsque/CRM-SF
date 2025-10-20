@@ -1,39 +1,64 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
-// init
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const envOk = SUPABASE_URL && SUPABASE_ANON_KEY && !SUPABASE_URL.includes('YOUR-PROJECT');
 document.getElementById('envWarning').style.display = envOk ? 'none' : 'inline-block';
 
-// DOM
 const q = (s, el=document)=>el.querySelector(s);
 const qq = (s, el=document)=>Array.from(el.querySelectorAll(s));
 
 const elCards = q('#cards');
 const elQ = q('#q');
-const elFMuni = q('#fMunicipality');
-const elFCity = q('#fCity');
-const elFSport = q('#fSport');
-const elFProfit = q('#fProfit');
 const elTotals = q('#totals');
 
+// Multi-select filter containers
+const mselDefs = [
+  { key: 'municipality', label: 'Gemeente', selector: '[data-key="municipality"]' },
+  { key: 'city',         label: 'Plaats',   selector: '[data-key="city"]' },
+  { key: 'sport',        label: 'Sport',    selector: '[data-key="sport"]' },
+  { key: 'profit',       label: 'Profit/Non-profit', selector: '[data-key="profit"]' },
+];
+const mselState = {
+  municipality: new Set(),
+  city: new Set(),
+  sport: new Set(),
+  profit: new Set(),
+};
+
+// Pagination
+const PAGE_SIZE = 16;
+let currentPage = 1;
+
 q('#btnClear').addEventListener('click', ()=>{
-  elQ.value=''; elFMuni.value=''; elFCity.value=''; elFSport.value=''; elFProfit.value='';
+  elQ.value = '';
+  for(const k in mselState){ mselState[k].clear(); }
+  updateMselLabels();
+  currentPage = 1;
   render();
 });
 q('#btnRefresh').addEventListener('click', async ()=>{
   await loadData(true);
+  currentPage = 1;
   render();
 });
 q('#btnExport').addEventListener('click', ()=>{
   exportCSV(filteredRows);
 });
 
-[elQ, elFMuni, elFCity, elFSport, elFProfit].forEach(el=>{
-  el.addEventListener('input', ()=>render());
+// open/close menus
+document.addEventListener('click', (e)=>{
+  const msel = e.target.closest('.msel');
+  qq('.msel').forEach(el => {
+    if(el !== msel) el.classList.remove('open');
+  });
+  if(msel && e.target.closest('.msel-btn')){
+    msel.classList.toggle('open');
+  }
 });
 
-// Data
+// Search input
+elQ.addEventListener('input', ()=>{ currentPage = 1; render(); });
+
 let allRows = [];
 let filteredRows = [];
 
@@ -49,62 +74,129 @@ async function loadData(force=false){
   const { data, error } = await supabase
     .from('organizations')
     .select('id_code,name,type,sport,municipality,city,postal_code,has_canteen,latitude,longitude,attributes')
-    .limit(5000);
+    .limit(10000);
   if(error){ console.error(error); alert('Fout bij laden data'); return; }
   allRows = data || [];
   buildFilterOptions();
 }
 
 function buildFilterOptions(){
-  // Build distinct lists from allRows
-  const muni = new Set(), city = new Set(), sport = new Set();
+  const sets = {
+    municipality: new Set(),
+    city: new Set(),
+    sport: new Set(),
+    profit: new Set(['Non-profit','Profit','Onbekend']),
+  };
   allRows.forEach(r=>{
-    if(r.municipality) muni.add(r.municipality);
-    if(r.city) city.add(r.city);
-    if(r.sport) sport.add(r.sport);
+    if(r.municipality) sets.municipality.add(r.municipality);
+    if(r.city) sets.city.add(r.city);
+    if(r.sport) sets.sport.add(r.sport);
   });
-  function fill(select, values){
-    const sel = select;
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">' + sel.options[0].text + '</option>';
-    Array.from(values).sort((a,b)=>a.localeCompare(b)).forEach(v=>{
-      const opt = document.createElement('option');
-      opt.value = v; opt.textContent = v;
-      sel.appendChild(opt);
+
+  mselDefs.forEach(def=>{
+    const root = q(def.selector);
+    const menu = root.querySelector('.msel-menu');
+    menu.innerHTML = '';
+    // header with Clear
+    const header = document.createElement('div');
+    header.className = 'header';
+    const count = document.createElement('span');
+    count.className = 'muted';
+    count.textContent = 'Meervoudige selectie';
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'btn ghost';
+    clearBtn.type = 'button';
+    clearBtn.textContent = 'Wissen';
+    clearBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      mselState[def.key].clear();
+      updateMselLabels();
+      currentPage = 1;
+      render();
     });
-    sel.value = cur; // preserve if possible
-  }
-  fill(elFMuni, muni);
-  fill(elFCity, city);
-  fill(elFSport, sport);
+    header.appendChild(count); header.appendChild(clearBtn);
+    menu.appendChild(header);
+
+    Array.from(sets[def.key]).sort((a,b)=>a.localeCompare(b)).forEach(val=>{
+      const row = document.createElement('label');
+      row.className = 'opt';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = mselState[def.key].has(val);
+      cb.addEventListener('change', (e)=>{
+        if(e.target.checked) mselState[def.key].add(val);
+        else mselState[def.key].delete(val);
+        updateMselLabels();
+        currentPage = 1;
+        render();
+      });
+      const span = document.createElement('span'); span.textContent = val;
+      row.appendChild(cb); row.appendChild(span);
+      menu.appendChild(row);
+    });
+  });
+
+  updateMselLabels();
 }
 
-function render(){
+function updateMselLabels(){
+  mselDefs.forEach(def=>{
+    const root = q(def.selector);
+    const btn = root.querySelector('.msel-btn');
+    const sel = mselState[def.key];
+    if(sel.size === 0){
+      btn.textContent = def.label + ' ▾';
+    } else if(sel.size === 1){
+      btn.textContent = def.label + ' (1) ▾';
+    } else {
+      btn.textContent = `${def.label} (${sel.size}) ▾`;
+    }
+  });
+}
+
+function applyFilters(){
   const qv = elQ.value.trim().toLowerCase();
-  const fm = elFMuni.value;
-  const fc = elFCity.value;
-  const fs = elFSport.value;
-  const fp = elFProfit.value;
 
   filteredRows = allRows.filter(r=>{
     if(qv){
       const hay = [r.name, r.sport, r.municipality, r.city, r.type].join(' ').toLowerCase();
       if(!hay.includes(qv)) return false;
     }
-    if(fm && r.municipality !== fm) return false;
-    if(fc && r.city !== fc) return false;
-    if(fs && r.sport !== fs) return false;
-    if(fp){
-      if(profitLabel(r.type) !== fp) return false;
+    // municipality
+    if(mselState.municipality.size){
+      if(!mselState.municipality.has(r.municipality)) return false;
+    }
+    // city
+    if(mselState.city.size){
+      if(!mselState.city.has(r.city)) return false;
+    }
+    // sport
+    if(mselState.sport.size){
+      if(!mselState.sport.has(r.sport)) return false;
+    }
+    // profit
+    if(mselState.profit.size){
+      const pl = profitLabel(r.type);
+      if(!mselState.profit.has(pl)) return false;
     }
     return true;
   });
+}
 
-  elTotals.textContent = `Totaal ${allRows.length} clubs • Gefilterd ${filteredRows.length}`;
+function render(){
+  applyFilters();
+
+  const total = filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(currentPage > totalPages) currentPage = totalPages;
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = filteredRows.slice(start, start + PAGE_SIZE);
+
+  elTotals.textContent = `Totaal ${allRows.length} • Gefilterd ${filteredRows.length}`;
 
   elCards.innerHTML = '';
   const tpl = q('#cardTpl');
-  filteredRows.forEach(r=>{
+  pageRows.forEach(r=>{
     const node = tpl.content.cloneNode(true);
     node.querySelector('.club-title').textContent = r.name || '(naam onbekend)';
     const t = profitLabel(r.type);
@@ -120,7 +212,19 @@ function render(){
     btn.addEventListener('click', ()=>openDetails(r));
     elCards.appendChild(node);
   });
+
+  // pagination controls
+  q('#pageInfo').textContent = `Pagina ${currentPage} / ${totalPages}`;
+  q('#prevPage').disabled = currentPage <= 1;
+  q('#nextPage').disabled = currentPage >= totalPages;
 }
+
+q('#prevPage').addEventListener('click', ()=>{
+  if(currentPage > 1){ currentPage--; render(); }
+});
+q('#nextPage').addEventListener('click', ()=>{
+  currentPage++; render();
+});
 
 function exportCSV(rows){
   const header = ['id_code','name','sport','municipality','city','type','has_canteen','postal_code','latitude','longitude'];
@@ -164,6 +268,6 @@ function openDetails(r){
   dlg.showModal();
 }
 
-// init
+// Init
 await loadData();
 render();
