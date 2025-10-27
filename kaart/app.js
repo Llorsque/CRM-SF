@@ -100,7 +100,6 @@ async function buildFilters(){
 
 function filterOrgs(){
   return ALL_ORGS.filter(o=>{
-    if(!o.latitude || !o.longitude) return false;
     const okMuni = !state.muni.length || state.muni.includes(o.municipality);
     const okCity = !state.city.length || state.city.includes(o.city);
     const okSport= !state.sport.length || state.sport.includes(o.sport);
