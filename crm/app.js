@@ -340,6 +340,23 @@ function openDetails(r){
   listDocs(r.id_code);
 
   q('#dlgClose').onclick = ()=>dlg.close();
+
+  // CRM augment: set active club and add an Edit button
+  try {
+    window.activeClubId = r.id_code;
+    const head = q('.dlg-head');
+    if (head && !document.getElementById('crm-edit-inline')) {
+      const btn = document.createElement('button');
+      btn.id = 'crm-edit-inline';
+      btn.className = 'btn';
+      btn.textContent = 'Bewerken';
+      btn.style.marginLeft = '8px';
+      btn.onclick = ()=>{ if(window.CRMUI){ CRMUI.setActiveClub(r.id_code); CRMUI.open(); } };
+      head.appendChild(btn);
+    } else if (window.CRMUI) {
+      CRMUI.setActiveClub(r.id_code);
+    }
+  } catch(e) { console.warn('CRM augment (inline) faalde', e); }
   dlg.showModal();
 }
 

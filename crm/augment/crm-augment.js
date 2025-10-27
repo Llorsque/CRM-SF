@@ -63,11 +63,11 @@ window.CRMUI=(function(){
 
   function guardReady(){
     if(!cfg.supabaseUrl || !cfg.anonKey){
-      console.warn('Supabase keys missen. Zet meta tags of window.SUPABASE_URL/ANON.');
-      toast('⚠️ Supabase keys ontbreken'); return false
+      console.warn('Supabase keys missen. config.js wordt gebruikt om ze te zetten.');
+      return false
     }
     if(!currentOrgId()){
-      toast('⚠️ Geen club geselecteerd'); return false
+      toast('⚠️ Geen vereniging geselecteerd'); return false
     }
     return true
   }
@@ -162,7 +162,6 @@ window.CRMUI=(function(){
         ok(upd.error,'Gegevens bijgewerkt.')
       })
     ]);
-    // prefilling
     (async()=>{
       const orgId=currentOrgId(); if(!orgId) return;
       const { data } = await sb.from('organizations')
@@ -180,18 +179,13 @@ window.CRMUI=(function(){
   // Helpers
   function field(label, control, full=false){ const r=h('div',{class:'crm-row'}); r.appendChild(h('label',{},label)); r.appendChild(control); if(full){ r.style.gridColumn='1 / -1' } return r }
   function select(id, items){ const s=h('select',{id}); for(const it of items){ if(Array.isArray(it)) s.appendChild(h('option',{value:it[0]},it[1])); else s.appendChild(h('option',{value:it},it)) } return s }
-  function actions(onSave){ return h('div',{class:'crm-actions'},[ h('button',{class:'btn ghost',onClick:()=>document.getElementById('crm-modal').style.display='none'},'Annuleren'), h('button',{class:'btn',onClick:async()=>{ try{ if(!guardReady()) return; await onSave(); } catch(e){ console.error(e); toast('❌ Fout: '+(e.message||e)) } }},'Opslaan') ]) }
+  function actions(onSave){ return h('div',{class:'crm-actions'},[ h('button',{class:'btn ghost',onClick:()=>document.getElementById('crm-modal').style.display='none'},'Annuleren'), h('button',{class:'btn',onClick:async()=>{ try{ if(!guardReady()) return; await onSave(); toast('✅ Opgeslagen') } catch(e){ console.error(e); toast('❌ Fout: '+(e.message||e)) } }},'Opslaan') ]) }
 
   function bindDetailsClicks(){
-    // Wanneer je op een element met [data-org] of [data-org-id] klikt, zetten we de actieve club
     document.addEventListener('click', (ev)=>{
-      const t=ev.target;
-      if(!(t instanceof Element)) return;
+      const t=ev.target; if(!(t instanceof Element)) return;
       const el = t.closest('[data-org]') || t.closest('[data-org-id]');
-      if(el){
-        const id = el.getAttribute('data-org') || el.getAttribute('data-org-id');
-        if(id){ window.activeClubId = id; }
-      }
+      if(el){ const id = el.getAttribute('data-org') || el.getAttribute('data-org-id'); if(id){ window.activeClubId = id; } }
     }, true);
   }
 
@@ -207,12 +201,16 @@ window.CRMUI=(function(){
       const btn=document.querySelector(btnSel);
       if(!btn) return;
       btn.addEventListener('click', ()=>{
-        // Check keys + active org first
         if(!guardReady()) return;
         const m=document.getElementById('crm-modal'); if(m) m.remove();
         const { open } = modal(); open();
       });
     },
-    setActiveClub: (id) => { window.activeClubId = id; }
+    setActiveClub: (id) => { window.activeClubId = id; },
+    open: () => {
+      if(!guardReady()) return;
+      const m=document.getElementById('crm-modal'); if(m) m.remove();
+      const { open } = modal(); open();
+    }
   }
 })();
