@@ -1,0 +1,156 @@
+
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    // Gebruik de bestaande config uit crm/config.js
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../crm/config.js';
+    window.SUPABASE_URL = SUPABASE_URL;
+    window.SUPABASE_ANON = SUPABASE_ANON_KEY;
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Dashboard</h1>
+
+    <div class="filters" id="filters">
+      <div class="filter">
+        <label>Sport</label>
+        <select id="f_sport"><option value="">Alles</option></select>
+      </div>
+      <div class="filter">
+        <label>Gemeente</label>
+        <select id="f_muni"><option value="">Alles</option></select>
+      </div>
+      <div class="filter">
+        <label>Type (profit/non-profit)</label>
+        <select id="f_type">
+          <option value="">Alles</option>
+          <option value="profit">Profit</option>
+          <option value="non-profit">Non-profit</option>
+        </select>
+      </div>
+      <div class="filter">
+        <label>Activiteit (interacties)</label>
+        <select id="f_kind">
+          <option value="">Alles</option>
+          <option value="meeting">Meeting</option>
+          <option value="call">Call</option>
+          <option value="email">Email</option>
+          <option value="bezoek">Bezoek</option>
+          <option value="actie">Actie</option>
+          <option value="overig">Overig</option>
+        </select>
+      </div>
+      <div class="filter">
+        <label>Traject status</label>
+        <select id="f_status">
+          <option value="">Alles</option>
+          <option value="open">Open</option>
+          <option value="lopend">Lopend</option>
+          <option value="on-hold">On-hold</option>
+          <option value="afgerond">Afgerond</option>
+          <option value="geannuleerd">Geannuleerd</option>
+        </select>
+      </div>
+      <div class="filter">
+        <label>Attribuut</label>
+        <select id="f_attr">
+          <option value="">Alle clubs</option>
+          <option value="nieuwsbrief_ontvangen">Nieuwsbrief ontvangen = Ja</option>
+          <option value="sociaal_veilig">Sociaal veilige sportomgeving = Ja</option>
+        </select>
+      </div>
+      <div class="filter">
+        <label>Postcode</label>
+        <input id="f_post" placeholder="bijv. 1011"/>
+      </div>
+      <div class="filter">
+        <label>Periode</label>
+        <div class="row">
+          <input id="f_from" type="date"/>
+          <input id="f_to" type="date"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="tiles" id="tiles">
+      <!-- 12 tiles -->
+      <div class="tile accent" data-tile="interactions_total">
+        <h3>Activiteiten</h3>
+        <div class="big">–</div>
+        <div class="sub" data-sub>0 in de afgelopen week</div>
+      </div>
+
+      <div class="tile" data-tile="clubs_total">
+        <h3>Clubs (gefilterd)</h3>
+        <div class="big">–</div>
+        <div class="sub">in organisaties</div>
+      </div>
+
+      <div class="tile" data-tile="active_clubs">
+        <h3>Actieve clubs</h3>
+        <div class="big">–</div>
+        <div class="sub">met ≥1 activiteit in periode</div>
+      </div>
+
+      <div class="tile" data-tile="avg_interactions_per_club">
+        <h3>Gem. activiteiten per club</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="last_activity">
+        <h3>Laatste activiteit</h3>
+        <div class="big subtle">–</div>
+      </div>
+
+      <div class="tile" data-tile="trajecten_started">
+        <h3>Trajecten gestart</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="trajecten_closed">
+        <h3>Trajecten afgerond</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="trajecten_open">
+        <h3>Trajecten open</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="attr_nieuwsbrief">
+        <h3>Nieuwsbrief = Ja</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="attr_sociaal">
+        <h3>Sociaal veilig = Ja</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="week_new_interactions">
+        <h3>Nieuwe activiteiten (7d)</h3>
+        <div class="big">–</div>
+      </div>
+
+      <div class="tile" data-tile="post_top">
+        <h3>Meest voorkomende postcode</h3>
+        <div class="big">–</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span class="badge" id="ql">Filters actief: –</span>
+      <span id="ts"></span>
+    </div>
+  </div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
