@@ -1,0 +1,30 @@
+
+:root{
+  --bg:#0f1220; --panel:#171b2e; --ink:#e6e9f5; --muted:#9aa3b2;
+  --ring:#27304a; --chip:#222844; --accent:#52E8E8;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+.wrap{max-width:1200px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+h1{font-size:22px;margin:0}
+.nav{display:flex;gap:8px}
+.btn{padding:10px 14px;border-radius:12px;border:1px solid var(--ring);background:var(--chip);color:var(--ink);cursor:pointer;text-decoration:none}
+.btn:hover{filter:brightness(1.1)}
+.filters{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:10px 0 14px}
+.filter label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+.panel{background:var(--panel);border:1px solid var(--ring);border-radius:14px;padding:10px}
+.mapwrap{height:70vh;border:1px solid var(--ring);border-radius:16px;overflow:hidden}
+#map{height:100%;width:100%}
+/* multiselect */
+.ms{position:relative}
+.ms-toggle{width:100%;padding:12px 14px;border:1px solid var(--ring);border-radius:14px;background:var(--panel);color:var(--ink);display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.ms-panel{position:absolute;z-index:5000;top:100%;left:0;right:0;background:var(--panel);border:1px solid var(--ring);border-radius:12px;margin-top:6px;max-height:260px;overflow:auto;display:none}
+.ms.open .ms-panel{display:block}
+.ms-item{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px dashed var(--ring)}
+.ms-item:last-child{border-bottom:none}
+.ms-search{padding:8px 12px;border-bottom:1px solid var(--ring)}
+.ms-search input{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--ring);background:transparent;color:var(--ink)}
+.footer{margin-top:10px;color:var(--muted);font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.leaflet-popup-content{color:#111}
