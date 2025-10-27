@@ -7,11 +7,18 @@ const $ = (s, r=document)=>r.querySelector(s);
 let map, cluster;
 
 function normLatLng(rec){
-  let lat = Number(rec.latitude), lng = Number(rec.longitude);
-  // If looks swapped (lat outside [-90,90] or lng outside [-180,180]) → swap.
-  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
-    const t = lat; lat = lng; lng = t;
-  }
+  // Deterministic mapping because columns are swapped in Supabase:
+  // - `longitude` column actually holds the LATITUDE
+  // - `latitude`  column actually holds the LONGITUDE
+  // We therefore read:
+  //   lat := rec.longitude
+  //   lng := rec.latitude
+  const lat = Number(rec.longitude);
+  const lng = Number(rec.latitude);
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return [lat, lng];
+}
   // If still invalid, return null to skip.
   if (!isFinite(lat) || !isFinite(lng)) return null;
   if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
