@@ -341,7 +341,7 @@ function openDetails(r){
 
   q('#dlgClose').onclick = ()=>dlg.close();
 
-  // CRM augment: set active club and add an Edit button
+  // CRM augment: active club + inline Edit button
   try {
     window.activeClubId = r.id_code;
     const head = q('.dlg-head');
@@ -349,9 +349,13 @@ function openDetails(r){
       const btn = document.createElement('button');
       btn.id = 'crm-edit-inline';
       btn.className = 'btn';
+      btn.type = 'button';
       btn.textContent = 'Bewerken';
       btn.style.marginLeft = '8px';
-      btn.onclick = ()=>{ if(window.CRMUI){ CRMUI.setActiveClub(r.id_code); CRMUI.open(); } };
+      btn.addEventListener('click', (ev)=>{
+        ev.preventDefault(); ev.stopPropagation();
+        if (window.CRMUI){ CRMUI.setActiveClub(r.id_code); CRMUI.open(); }
+      });
       head.appendChild(btn);
     } else if (window.CRMUI) {
       CRMUI.setActiveClub(r.id_code);

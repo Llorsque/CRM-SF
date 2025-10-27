@@ -14,7 +14,7 @@ window.CRMUI=(function(){
     return e
   }
   function fmt(ts=new Date()){const p=n=>String(n).padStart(2,'0'); return ts.getFullYear()+"-"+p(ts.getMonth()+1)+"-"+p(ts.getDate())+"T"+p(ts.getHours())+":"+p(ts.getMinutes())}
-  function toast(msg){ let t=document.getElementById('crm-toast'); if(!t){ t=h('div',{id:'crm-toast',style:'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 14px;border-radius:10px;zIndex:10000'}); document.body.appendChild(t) } t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',2500) }
+  function toast(msg){ let t=document.getElementById('crm-toast'); if(!t){ t=h('div',{id:'crm-toast',style:'position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 14px;border-radius:10px;z-index:10000'}); document.body.appendChild(t) } t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none',2500) }
   function ok(err,okMsg){ if(err){ throw err } toast(okMsg||'Opgeslagen') }
   function val(id){ const el=document.getElementById(id); return el?el.value:'' }
   function setVal(id,v){ const el=document.getElementById(id); if(el) el.value=v }
@@ -22,7 +22,7 @@ window.CRMUI=(function(){
   function modal(){
     const root=h('div',{class:'crm-modal',id:'crm-modal'}),
           card=h('div',{class:'crm-card'}),
-          head=h('div',{class:'crm-h'},[h('div',{},[h('strong',{},'Toevoegen / Bewerken')]), h('button',{class:'btn ghost', onClick:()=>root.style.display='none'},'Sluiten')]),
+          head=h('div',{class:'crm-h'},[h('div',{},[h('strong',{},'Toevoegen / Bewerken')]), h('button',{class:'btn ghost', type:'button', onClick:()=>root.style.display='none'},'Sluiten')]),
           body=h('div',{class:'crm-body'}),
           tabs=h('div',{class:'crm-tabs'}),
           content=h('div',{id:'crm-content'});
@@ -38,7 +38,7 @@ window.CRMUI=(function(){
     function renderTabs(){
       tabs.innerHTML='';
       for(const t of tabDefs){
-        const b=h('button',{class:'crm-tab'+(t.key===active?' active':''), onClick:()=>{active=t.key; renderTabs(); renderContent()}}, t.label);
+        const b=h('button',{class:'crm-tab'+(t.key===active?' active':''), type:'button', onClick:()=>{active=t.key; renderTabs(); renderContent()}}, t.label);
         tabs.appendChild(b)
       }
     }
@@ -63,8 +63,8 @@ window.CRMUI=(function(){
 
   function guardReady(){
     if(!cfg.supabaseUrl || !cfg.anonKey){
-      console.warn('Supabase keys missen. config.js wordt gebruikt om ze te zetten.');
-      return false
+      console.warn('Supabase keys missen (komen normaal uit config.js).');
+      toast('⚠️ Supabase keys ontbreken'); return false
     }
     if(!currentOrgId()){
       toast('⚠️ Geen vereniging geselecteerd'); return false
@@ -72,7 +72,6 @@ window.CRMUI=(function(){
     return true
   }
 
-  // Views
   function viewInteractie(){
     const wrap=h('div',{},[
       h('div',{class:'crm-grid'},[
@@ -124,7 +123,10 @@ window.CRMUI=(function(){
   function viewAttribuut(){
     const wrap=h('div',{},[
       h('div',{class:'crm-grid'},[
-        field('Attribuut', select('at_key',['nieuwsbrief_ontvangen','sociaal_veilig','privacyverklaring','vwc_aanwezig'])),
+        field('Attribuut', select('at_key',[
+          'nieuwsbrief_ontvangen','sociaal_veilig','privacyverklaring','vwc_aanwezig',
+          'rabo_clubsupport','professionals_in_dienst','actieve_club','basis_op_orde'
+        ])),
         field('Waarde', select('at_val',[['1','Ja'],['0','Nee']])),
         field('Ingangsdatum', h('input',{type:'date', id:'at_from', value:(new Date()).toISOString().slice(0,10)}))
       ]),
@@ -176,10 +178,9 @@ window.CRMUI=(function(){
     return wrap
   }
 
-  // Helpers
   function field(label, control, full=false){ const r=h('div',{class:'crm-row'}); r.appendChild(h('label',{},label)); r.appendChild(control); if(full){ r.style.gridColumn='1 / -1' } return r }
   function select(id, items){ const s=h('select',{id}); for(const it of items){ if(Array.isArray(it)) s.appendChild(h('option',{value:it[0]},it[1])); else s.appendChild(h('option',{value:it},it)) } return s }
-  function actions(onSave){ return h('div',{class:'crm-actions'},[ h('button',{class:'btn ghost',onClick:()=>document.getElementById('crm-modal').style.display='none'},'Annuleren'), h('button',{class:'btn',onClick:async()=>{ try{ if(!guardReady()) return; await onSave(); toast('✅ Opgeslagen') } catch(e){ console.error(e); toast('❌ Fout: '+(e.message||e)) } }},'Opslaan') ]) }
+  function actions(onSave){ return h('div',{class:'crm-actions'},[ h('button',{class:'btn ghost',type:'button',onClick:()=>document.getElementById('crm-modal').style.display='none'},'Annuleren'), h('button',{class:'btn',type:'button',onClick:async()=>{ try{ if(!guardReady()) return; await onSave(); toast('✅ Opgeslagen') } catch(e){ console.error(e); toast('❌ Fout: '+(e.message||e)) } }},'Opslaan') ]) }
 
   function bindDetailsClicks(){
     document.addEventListener('click', (ev)=>{
@@ -200,7 +201,9 @@ window.CRMUI=(function(){
     attach: (btnSel) => {
       const btn=document.querySelector(btnSel);
       if(!btn) return;
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
         if(!guardReady()) return;
         const m=document.getElementById('crm-modal'); if(m) m.remove();
         const { open } = modal(); open();
