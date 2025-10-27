@@ -1,6 +1,9 @@
 <!doctype html>
 <html lang="nl">
 <head>
+  <meta name=\"supabase-url\" content=\"\">
+  <meta name=\"supabase-anon\" content=\"\">
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>CRM – Clubs & Klanten</title>
@@ -13,6 +16,9 @@
 </head>
 <body>
   <header class="app-header">
+  <meta name=\"supabase-url\" content=\"\">
+  <meta name=\"supabase-anon\" content=\"\">
+
     <div class="left">
       <a class="home-link" href="../">← Terug</a>
       <h1>CRM</h1>
@@ -80,6 +86,9 @@
     <template id="cardTpl">
       <article class="card club-card">
         <header class="club-head">
+  <meta name=\"supabase-url\" content=\"\">
+  <meta name=\"supabase-anon\" content=\"\">
+
           <h3 class="club-title"></h3>
           <span class="badge type"></span>
         </header>
@@ -99,6 +108,9 @@
   <dialog id="detailsDialog">
     <div class="dlg">
       <header class="dlg-head">
+  <meta name=\"supabase-url\" content=\"\">
+  <meta name=\"supabase-anon\" content=\"\">
+
         <h3 id="dlgTitle">Details</h3>
         <button id="dlgClose" class="btn ghost">✖</button>
       </header>
@@ -145,5 +157,29 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script type="module" src="./app.js"></script>
+
+<!-- Supabase + CRM augment -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="stylesheet" href="augment/crm-augment.css">
+<script src="augment/crm-augment.js"></script>
+
+<button id="crm-add-btn" style="margin:12px 0">+ Toevoegen / Bewerken</button>
+
+<script>
+  function meta(name){var m=document.querySelector('meta[name="'+name+'"]'); return m?m.getAttribute('content')||'':''}
+  const SUPABASE_URL  = window.SUPABASE_URL  || meta('supabase-url')  || '';
+  const SUPABASE_ANON = window.SUPABASE_ANON || meta('supabase-anon') || '';
+
+  function currentOrgId(){
+    return window.activeClubId
+        || (document.querySelector('[data-org]') && document.querySelector('[data-org]').getAttribute('data-org'))
+        || '';
+  }
+  try{
+    CRMUI.init({ supabaseUrl: SUPABASE_URL, anonKey: SUPABASE_ANON, getOrgId: currentOrgId });
+    CRMUI.attach('#crm-add-btn');
+  }catch(e){ console.warn('CRM augment init faalde:', e); }
+</script>
+
 </body>
 </html>
