@@ -1,50 +1,75 @@
+
 <!doctype html>
 <html lang="nl">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Github CRM/ERP – Prototype</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css" />
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop stop-color='%232dd4bf'/%3E%3Cstop offset='1' stop-color='%2352E8E8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='6' fill='url(%23g)'/%3E%3Ctext x='16' y='21' text-anchor='middle' font-size='14' fill='%230b1220' font-family='Arial'%3EC%3C/text%3E%3C/svg%3E">
-  </head>
-  <body>
-    <header class="topbar">
-      <div class="brand">Github CRM/ERP</div>
-      <div class="menu">
-        <button id="modBtn" class="btn ghost">Modules ▾</button>
-        <nav id="modMenu" class="menu-panel">
-          <a href="./crm/">CRM</a>
-          <a href="./dashboard/">Dashboard</a>
-          <a href="./kaart/">Kaart</a>
-          <a href="./trajecten/">Trajecten</a>
-          <a href="./producten/">Producten &amp; Diensten</a>
-        </nav>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Kaart</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <!-- Leaflet & MarkerCluster -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module">
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../crm/config.js';
+    window.SUPABASE_URL = SUPABASE_URL;
+    window.SUPABASE_ANON = SUPABASE_ANON_KEY;
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Kaart</h1>
+      <div class="nav">
+        <a class="btn" href="../index.html">← Hoofdpagina</a>
+        <a class="btn" href="../crm/index.html">CRM</a>
+        <a class="btn" href="../dashboard/index.html">Dashboard</a>
       </div>
     </header>
 
-    <main class="hero">
-      <section class="card intro">
-        <h1>Welkom</h1>
-        <p>Dit is de main/landingspagina van het CRM/ERP prototype. Gebruik het menu rechtsboven om naar modules te gaan.</p>
-        <div class="quick">
-          <a class="chip" href="./crm/">Open CRM →</a>
-          <a class="chip" href="./dashboard/">Dashboard</a>
-          <a class="chip" href="./kaart/">Kaart</a>
-          <a class="chip" href="./trajecten/">Trajecten</a>
-          <a class="chip" href="./producten/">Producten &amp; Diensten</a>
+    <div class="panel">
+      <div class="filters">
+        <div class="filter">
+          <label>Gemeente</label>
+          <div id="ms_muni"></div>
         </div>
-        <small class="muted">Prototype • Archivo • Thema: #212945 / #52E8E8</small>
-      </section>
-    </main>
+        <div class="filter">
+          <label>Plaats</label>
+          <div id="ms_city"></div>
+        </div>
+        <div class="filter">
+          <label>Sport</label>
+          <div id="ms_sport"></div>
+        </div>
+        <div class="filter">
+          <label>Type (profit/non-profit)</label>
+          <div id="ms_type"></div>
+        </div>
+        <div class="filter">
+          <label>Eigen kantine</label>
+          <div id="ms_kantine"></div>
+        </div>
+        <div class="filter">
+          <label>Attribuut</label>
+          <div id="ms_attr"></div>
+        </div>
+      </div>
+    </div>
 
-    <script>
-      const btn = document.getElementById('modBtn');
-      const menu = document.getElementById('modMenu');
-      btn.addEventListener('click', (e)=>{ e.stopPropagation(); menu.classList.toggle('open'); });
-      document.addEventListener('click', ()=> menu.classList.remove('open'));
-    </script>
-  </body>
+    <div class="mapwrap">
+      <div id="map"></div>
+    </div>
+
+    <div class="footer">
+      <span id="meta">–</span>
+      <span id="count">0 pins</span>
+    </div>
+  </div>
+
+  <script src="multiselect.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
 </html>

@@ -1,262 +1,154 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-document.getElementById('envWarning').style.display = (SUPABASE_URL && !SUPABASE_URL.includes('YOUR-PROJECT')) ? 'none' : 'inline-block';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from '../crm/config.js';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{persistSession:false} });
 
-const q = (s, el=document)=>el.querySelector(s);
-const qq = (s, el=document)=>Array.from(el.querySelectorAll(s));
+const $ = (s, r=document)=>r.querySelector(s);
 
-const elCards = q('#cards');
-const elQ = q('#q');
-const elTotals = q('#totals');
+let map, cluster;
 
-function humanizeKey(k){
-  return (k||'').replace(/_/g,' ').replace(/\s+/g,' ').replace(/(^|\s)\p{L}/gu, m=>m.toUpperCase()).replace(/\'/g,'’');
+function normLatLng(rec){
+  // Deterministic mapping because columns are swapped in Supabase:
+  // - `longitude` column actually holds the LATITUDE
+  // - `latitude`  column actually holds the LONGITUDE
+  // We therefore read:
+  //   lat := rec.longitude
+  //   lng := rec.latitude
+  const lat = Number(rec.longitude);
+  const lng = Number(rec.latitude);
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return [lat, lng];
+}
+  // If still invalid, return null to skip.
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return [lat, lng];
 }
 
-const mselDefs = [
-  { key: 'municipality', label: 'Gemeente', selector: '[data-key="municipality"]' },
-  { key: 'city',         label: 'Plaats',   selector: '[data-key="city"]' },
-  { key: 'sport',        label: 'Sport',    selector: '[data-key="sport"]' },
-  { key: 'profit',       label: 'Profit/Non-profit', selector: '[data-key="profit"]' },
-  { key: 'canteen',      label: 'Eigen Kantine', selector: '[data-key="canteen"]' },
-  { key: 'attrs',        label: 'Attributen', selector: '[data-key="attrs"]' },
-];
-const mselState = { municipality:new Set(), city:new Set(), sport:new Set(), profit:new Set(), canteen:new Set(), attrs:new Set() };
-
-const PAGE_SIZE = 16;
-let currentPage = 1;
-let totalCount = 0;
-let allRows = [];
-let filteredRows = [];
-
-// dynamic label->key map for attributes
-let attrLabelToKey = new Map();
-
-q('#btnClear').addEventListener('click', ()=>{
-  elQ.value=''; for(const k in mselState) mselState[k].clear();
-  updateMselLabels(); currentPage=1; render();
-});
-q('#btnRefresh').addEventListener('click', async ()=>{ await loadData(true); currentPage=1; render(); });
-q('#btnExport').addEventListener('click', ()=>exportCSV(filteredRows));
-
-document.addEventListener('click', (e)=>{
-  const m = e.target.closest('.msel'); qq('.msel').forEach(el=>{ if(el!==m) el.classList.remove('open'); });
-  if(m && e.target.closest('.msel-btn')) m.classList.toggle('open');
-});
-elQ.addEventListener('input', ()=>{ currentPage=1; render(); });
-
-function profitLabel(type){
-  const t = (type || '').toLowerCase();
-  if(t.includes('non') || t.includes('stich') || t.includes('verenig')) return 'Non-profit';
-  if(t.includes('profit') || t.includes('bedrijf') || t.includes('bv') || t.includes('vof')) return 'Profit';
-  return 'Onbekend';
-}
-function normalizeCoords(lat, lng){
-  let a = parseFloat(lat), b = parseFloat(lng);
-  if(Number.isNaN(a) || Number.isNaN(b)) return {lat:null, lng:null};
-  if(Math.abs(a) > 90 && Math.abs(b) <= 90){ const tmp=a; a=b; b=tmp; }
-  if(Math.abs(a) < Math.abs(b) && Math.abs(b) <= 90){ const tmp=a; a=b; b=tmp; }
-  return { lat: a, lng: b };
+function initMap(){
+  map = L.map('map',{scrollWheelZoom:true}).setView([52.2,5.3], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+  cluster = L.markerClusterGroup();
+  map.addLayer(cluster);
 }
 
-async function loadData(force=false){
-  if(allRows.length && !force) return;
-  allRows = []; totalCount = 0;
-  const CHUNK = 1000; let from = 0; let firstCountSet = false;
-  while(true){
-    const { data, error, count } = await supabase
-      .from('organizations')
-      .select('id_code,name,type,sport,municipality,city,postal_code,has_canteen,latitude,longitude,attributes', { count: 'exact' })
-      .range(from, from + CHUNK - 1);
-    if(error){ console.error(error); alert('Fout bij laden data'); break; }
-    if(!firstCountSet){ totalCount = count || 0; firstCountSet = true; }
-    if(!data || data.length === 0) break;
-    allRows.push(...data);
-    if(data.length < CHUNK) break; from += CHUNK;
+function pinPopup(r){
+  const lines = [
+    `<strong>${(r.name||'Onbekende club')}</strong>`,
+    r.sport ? `${r.sport}` : '',
+    [r.municipality, r.city].filter(Boolean).join(' – '),
+    r.type ? `Type: ${r.type}` : '',
+    (typeof r.has_canteen==='boolean') ? `Eigen kantine: ${r.has_canteen ? 'Ja' : 'Nee'}` : ''
+  ].filter(Boolean);
+  return lines.join('<br/>');
+}
+
+// Pagination helper
+async function fetchAll(table, select, whereCb){
+  const pageSize=1000; let from=0,to=pageSize-1,rows=[],more=true;
+  while(more){
+    let q=sb.from(table).select(select, {head:false});
+    if(whereCb) q = whereCb(q);
+    q = q.range(from,to);
+    const { data, error } = await q;
+    if(error) throw error;
+    rows = rows.concat(data||[]);
+    more = (data||[]).length===pageSize;
+    from += pageSize; to += pageSize;
   }
-  buildFilterOptions();
+  return rows;
 }
 
-function buildFilterOptions(){
-  const sets = { municipality:new Set(), city:new Set(), sport:new Set(), profit:new Set(['Non-profit','Profit','Onbekend']), canteen:new Set(['Ja','Nee','Onbekend']), attrs:new Set() };
-  attrLabelToKey = new Map();
-  allRows.forEach(r=>{
-    if(r.municipality) sets.municipality.add(r.municipality);
-    if(r.city) sets.city.add(r.city);
-    if(r.sport) sets.sport.add(r.sport);
-    const at = r.attributes || {};
-    for(const k in at){
-      const label = humanizeKey(k);
-      sets.attrs.add(label);
-      attrLabelToKey.set(label, k);
-    }
-  });
-
-  mselDefs.forEach(def=>{
-    const root = q(def.selector);
-    if(!root) return;
-    const menu = root.querySelector('.msel-menu');
-    menu.innerHTML = '';
-    const header = document.createElement('div');
-    header.className = 'header';
-    const count = document.createElement('span');
-    count.className = 'muted';
-    count.textContent = 'Meervoudige selectie';
-    const clearBtn = document.createElement('button');
-    clearBtn.className = 'btn ghost';
-    clearBtn.type = 'button';
-    clearBtn.textContent = 'Wissen';
-    clearBtn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      mselState[def.key].clear();
-      updateMselLabels();
-      currentPage = 1; render();
-    });
-    header.appendChild(count); header.appendChild(clearBtn);
-    menu.appendChild(header);
-
-    Array.from(sets[def.key]).sort((a,b)=>a.localeCompare(b)).forEach(val=>{
-      const row = document.createElement('label');
-      row.className = 'opt';
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.checked = mselState[def.key].has(val);
-      cb.addEventListener('change', (e)=>{
-        if(e.target.checked) mselState[def.key].add(val);
-        else mselState[def.key].delete(val);
-        updateMselLabels();
-        currentPage = 1; render();
-      });
-      const span = document.createElement('span'); span.textContent = val;
-      row.appendChild(cb); row.appendChild(span);
-      menu.appendChild(row);
-    });
-  });
-
-  updateMselLabels();
-}
-
-function updateMselLabels(){
-  mselDefs.forEach(def=>{
-    const root = q(def.selector);
-    if(!root) return;
-    const btn = root.querySelector('.msel-btn');
-    const sel = mselState[def.key];
-    if(sel.size === 0){
-      btn.textContent = def.label + ' ▾';
-    } else if(sel.size === 1){
-      btn.textContent = def.label + ' (1) ▾';
-    } else {
-      btn.textContent = `${def.label} (${sel.size}) ▾`;
-    }
+// Load orgs + current attributes
+let ALL_ORGS=[], ATTR_IDX=new Map();
+async function loadData(){
+  ALL_ORGS = await fetchAll('organizations','id_code,name,latitude,longitude,sport,municipality,city,type,has_canteen');
+  const attrs = await fetchAll('v_current_attributes','org_id,attr_key,value');
+  ATTR_IDX = new Map();
+  (attrs||[]).forEach(a=>{
+    if(a.value !== 1) return;
+    if(!ATTR_IDX.has(a.org_id)) ATTR_IDX.set(a.org_id, new Set());
+    ATTR_IDX.get(a.org_id).add(a.attr_key);
   });
 }
 
-function applyFilters(){
-  const qv = elQ.value.trim().toLowerCase();
+// Multiselects
+const state = { muni:[], city:[], sport:[], type:[], kantine:[], attr:[] };
+const ms = {};
 
-  filteredRows = allRows.filter(r=>{
-    if(qv){
-      const hay = [r.name, r.sport, r.municipality, r.city, r.type].join(' ').toLowerCase();
-      if(!hay.includes(qv)) return false;
-    }
-    if(mselState.municipality.size && !mselState.municipality.has(r.municipality)) return false;
-    if(mselState.city.size && !mselState.city.has(r.city)) return false;
-    if(mselState.sport.size && !mselState.sport.has(r.sport)) return false;
-    if(mselState.profit.size && !mselState.profit.has(profitLabel(r.type))) return false;
+function buildMS(id, options, onChange){
+  const el = document.getElementById(id);
+  ms[id] = window.MultiSelect.create(el, { options, onChange });
+}
 
-    // Canteen filter
-    if(mselState.canteen.size){
-      const v = (r.has_canteen===true) ? 'Ja' : (r.has_canteen===false) ? 'Nee' : 'Onbekend';
-      if(!mselState.canteen.has(v)) return false;
-    }
+function uniq(arr){ return Array.from(new Set(arr.filter(Boolean))).sort((a,b)=>String(a).localeCompare(String(b),'nl')); }
 
-    // Attributes filter: require all selected attributes to be '1' (Ja)
-    if(mselState.attrs.size){
-      const attrs = r.attributes || {};
-      for(const label of mselState.attrs){
-        const key = attrLabelToKey.get(label);
-        const val = attrs?.[key];
-        if(!(val === 1 || val === '1' || val === true)) return false;
-      }
-    }
+async function buildFilters(){
+  const orgs = ALL_ORGS;
+  buildMS('ms_muni',    uniq(orgs.map(o=>o.municipality)), v=>{ state.muni=v; refresh(); });
+  buildMS('ms_city',    uniq(orgs.map(o=>o.city)), v=>{ state.city=v; refresh(); });
+  buildMS('ms_sport',   uniq(orgs.map(o=>o.sport)), v=>{ state.sport=v; refresh(); });
+  buildMS('ms_type',    uniq(orgs.map(o=>o.type)), v=>{ state.type=v; refresh(); });
+  buildMS('ms_kantine', ['Ja','Nee'], v=>{ state.kantine=v; refresh(); });
+  // Attributes: haal unieke lijst uit ATTR_IDX
+  const attrKeys = uniq(Array.from(new Set(Array.from(ATTR_IDX.values()).flatMap(s=>Array.from(s)))));
+  buildMS('ms_attr', attrKeys.length?attrKeys:['nieuwsbrief_ontvangen','sociaal_veilig'], v=>{ state.attr=v; refresh(); });
+}
 
-    return true;
+function filterOrgs(){
+  return ALL_ORGS.filter(o=>{
+    if(!o.latitude || !o.longitude) return false;
+    const okMuni = !state.muni.length || state.muni.includes(o.municipality);
+    const okCity = !state.city.length || state.city.includes(o.city);
+    const okSport= !state.sport.length || state.sport.includes(o.sport);
+    const okType = !state.type.length || state.type.includes(o.type);
+    const okKant = !state.kantine.length || state.kantine.includes(o.has_canteen ? 'Ja' : 'Nee');
+    const okAttr = !state.attr.length || (function(){
+      const set = ATTR_IDX.get(o.id_code) || new Set();
+      // AND: alle gekozen attributen moeten aanwezig zijn
+      return state.attr.every(k=>set.has(k));
+    })();
+    return okMuni && okCity && okSport && okType && okKant && okAttr;
   });
 }
 
-function render(){
-  applyFilters();
-
-  const total = filteredRows.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  if(currentPage > totalPages) currentPage = totalPages;
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const pageRows = filteredRows.slice(start, start + PAGE_SIZE);
-
-  const totalText = `Totaal ${allRows.length} • Gefilterd ${filteredRows.length}`;
-  elTotals.textContent = totalText;
-
-  elCards.innerHTML = '';
-  const tpl = q('#cardTpl');
-  pageRows.forEach(r=>{
-    const node = tpl.content.cloneNode(true);
-    node.querySelector('.club-title').textContent = r.name || '(naam onbekend)';
-    const t = profitLabel(r.type);
-    const badge = node.querySelector('.badge.type');
-    badge.textContent = t;
-    badge.classList.add(t==='Profit' ? 'profit' : t==='Non-profit' ? 'nonprofit' : 'unknown');
-    node.querySelector('.sport').textContent = r.sport || 'Onbekend';
-    node.querySelector('.municipality').textContent = r.municipality || 'Onbekend';
-    node.querySelector('.city').textContent = r.city || 'Onbekend';
-    node.querySelector('.canteen').textContent = r.has_canteen === true ? 'Ja' : r.has_canteen === false ? 'Nee' : 'Onbekend';
-
-    const btn = node.querySelector('.details');
-    btn.addEventListener('click', ()=>openDetails(r));
-    elCards.appendChild(node);
+function renderPins(rows){
+  cluster.clearLayers();
+  rows.forEach(r=>{
+    const m = (function(){const p=normLatLng(r); return p?L.marker(p):null;})();
+    m.bindPopup(pinPopup(r));
+    cluster.addLayer(m);
   });
-
-  q('#pageInfo').textContent = `Pagina ${currentPage} / ${Math.max(1, totalPages)}`;
-  q('#prevPage').disabled = currentPage <= 1;
-  q('#nextPage').disabled = currentPage >= totalPages;
-}
-
-// Minimal details open to keep patch focused
-function openDetails(r){
-  const dlg = q('#detailsDialog');
-  q('#dlgTitle').textContent = r.name || 'Details';
-  q('#dlgSport').textContent = r.sport || '—';
-  q('#dlgMunicipality').textContent = r.municipality || '—';
-  q('#dlgCity').textContent = r.city || '—';
-  q('#dlgType').textContent = r.type || '—';
-  q('#dlgCanteen').textContent = r.has_canteen === true ? 'Ja' : r.has_canteen === false ? 'Nee' : 'Onbekend';
-  q('#dlgPostcode').textContent = r.postal_code || '—';
-  const n = normalizeCoords(r.latitude, r.longitude);
-  q('#dlgGeo').textContent = (n.lat!=null && n.lng!=null) ? `${n.lat}, ${n.lng}` : '—';
-  q('#dlgId').textContent = r.id_code || '—';
-
-  // Attributes list in details remains as before (not changed in this small patch)
-  // Map update (if Leaflet present)
-  if(window.L){
-    const el = document.getElementById('miniMap');
-    if(n.lat==null || n.lng==null){ el.innerHTML='<div style="padding:12px;color:#6b7280">Geen coördinaten beschikbaar</div>'; }
-    else{
-      if(!window.__dlgMap){
-        window.__dlgMap = L.map(el).setView([n.lat, n.lng], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom:19, attribution:'&copy; OpenStreetMap' }).addTo(window.__dlgMap);
-        window.__dlgMarker = L.marker([n.lat, n.lng]).addTo(window.__dlgMap);
-      } else {
-        window.__dlgMap.setView([n.lat, n.lng], 13);
-        window.__dlgMarker.setLatLng([n.lat, n.lng]);
-      }
-      setTimeout(()=>window.__dlgMap.invalidateSize(), 50);
-    }
+  if(rows.length){
+    const group = L.featureGroup(rows.map(r=>(function(){const p=normLatLng(r); return p?L.marker(p):null;})()));
+    map.fitBounds(group.getBounds().pad(0.2));
   }
-  q('#dlgClose').onclick = ()=>dlg.close();
-  dlg.showModal();
+  $('#count').textContent = `${rows.length} pins`;
 }
 
-// Init
-await loadData();
-render();
+function activeFiltersLabel(){
+  const parts=[];
+  if(state.muni.length) parts.push(`gemeente ${state.muni.length}`);
+  if(state.city.length) parts.push(`plaats ${state.city.length}`);
+  if(state.sport.length) parts.push(`sport ${state.sport.length}`);
+  if(state.type.length) parts.push(`type ${state.type.length}`);
+  if(state.kantine.length) parts.push(`kantine ${state.kantine.join('/')}`);
+  if(state.attr.length) parts.push(`attribuut ${state.attr.length}`);
+  return parts.length?parts.join(' · '):'geen filters';
+}
+
+async function refresh(){
+  const rows = filterOrgs();
+  renderPins(rows);
+  $('#meta').textContent = activeFiltersLabel();
+}
+
+(async function start(){
+  initMap();
+  await loadData();
+  await buildFilters();
+  await refresh();
+})();
