@@ -5,6 +5,19 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:
 const $ = (s, r=document)=>r.querySelector(s);
 
 let map, cluster;
+
+function normLatLng(rec){
+  let lat = Number(rec.latitude), lng = Number(rec.longitude);
+  // If looks swapped (lat outside [-90,90] or lng outside [-180,180]) → swap.
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+    const t = lat; lat = lng; lng = t;
+  }
+  // If still invalid, return null to skip.
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return [lat, lng];
+}
+
 function initMap(){
   map = L.map('map',{scrollWheelZoom:true}).setView([52.2,5.3], 7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -98,12 +111,12 @@ function filterOrgs(){
 function renderPins(rows){
   cluster.clearLayers();
   rows.forEach(r=>{
-    const m = L.marker([r.latitude, r.longitude]);
+    const m = (function(){const p=normLatLng(r); return p?L.marker(p):null;})();
     m.bindPopup(pinPopup(r));
     cluster.addLayer(m);
   });
   if(rows.length){
-    const group = L.featureGroup(rows.map(r=>L.marker([r.latitude, r.longitude])));
+    const group = L.featureGroup(rows.map(r=>(function(){const p=normLatLng(r); return p?L.marker(p):null;})()));
     map.fitBounds(group.getBounds().pad(0.2));
   }
   $('#count').textContent = `${rows.length} pins`;
